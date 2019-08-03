@@ -37,21 +37,17 @@ jobs:
       version: $(dotNetCoreVersion)
 
   - powershell: |
-      echo "##vso[task.setvariable variable=sonarcloudUrl;]$(sonarcloud.url)"
-      echo "##vso[task.setvariable variable=sonarcloudKey;]$(sonarcloud.key)"
-      echo "##vso[task.setvariable variable=sonarcloudToken;]$(sonarcloud.token)"
-      echo "##vso[task.setvariable variable=sonarcloudOrganization;]$(sonarcloud.organization)"
-      echo "##vso[task.setvariable variable=nuGetSource;]$(feed.source)"
-      echo "##vso[task.setvariable variable=nuGetApiKey;]$(feed.apikey)"
-    displayName: Set environment variables
-    condition: and(succeeded(), in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/develop'))
-
-  - powershell: |
       # Stop local MySQL server, port is used for tests
       sudo systemctl stop mysql.service
       # Restore NuGet packages
       ./build.sh --target=Restore-NuGet-Packages
     displayName: Prepare
+
+  - powershell: ./build.sh --target=Sonar-Begin
+    displayName: Start SonarCloud Analysis
+    #condition: and(succeeded(), in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/develop'))
+    env:
+      SONARQUBE_TOKEN: $(sonarcloud.token)
 
   - powershell: ./build.sh --target=Build
     displayName: Build
@@ -59,18 +55,15 @@ jobs:
   - powershell: ./build.sh --target=Test
     displayName: Test
 
-  - powershell: ./build.sh --target=Sonar
-    displayName: Sonar
+  - powershell: ./build.sh --target=Sonar-End
+    displayName: Finish SonarCloud Analysis
     condition: and(succeeded(), in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/develop'))
     env:
-      SONARQUBE_URL: $(sonarcloudUrl)
-      SONARQUBE_KEY: $(sonarcloudKey)
-      SONARQUBE_TOKEN: $(sonarcloudToken)
-      SONARQUBE_ORGANIZATION: $(sonarcloudOrganization)
+      SONARQUBE_TOKEN: $(sonarcloud.token)
 
   - powershell: ./build.sh --target=Publish
     displayName: Publish
     condition: and(succeeded(), in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/develop'))
     env:
-      NUGET_SOURCE: $(nuGetSource)
-      NUGET_APIKEY: $(nuGetApiKey)
+      NUGET_SOURCE: $(feed.source)
+      NUGET_APIKEY: $(feed.apikey)

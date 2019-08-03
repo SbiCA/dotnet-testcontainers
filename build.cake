@@ -2,7 +2,7 @@
 
 #addin nuget:?package=Cake.Sonar&version=1.1.22
 
-#addin nuget:?package=Cake.Git&version=0.20.0
+#addin nuget:?package=Cake.Git&version=0.21.0
 
 #load "./build/parameters.cake"
 
@@ -94,8 +94,8 @@ Task("Test")
   }
 });
 
-Task("SonarBegin")
-  .WithCriteria(() => param.ShouldPublish)
+Task("Sonar-Begin")
+  .WithCriteria(() => param.ShouldPublish || true)
   .Does(() =>
 {
   SonarBegin(new SonarBeginSettings
@@ -111,7 +111,7 @@ Task("SonarBegin")
   });
 });
 
-Task("SonarEnd")
+Task("Sonar-End")
   .WithCriteria(() => param.ShouldPublish)
   .Does(() =>
 {
@@ -161,10 +161,10 @@ Task("Default")
 Task("Sonar")
   .IsDependentOn("Clean")
   .IsDependentOn("Restore-NuGet-Packages")
-  .IsDependentOn("SonarBegin")
+  .IsDependentOn("Sonar-Begin")
   .IsDependentOn("Build")
   .IsDependentOn("Test")
-  .IsDependentOn("SonarEnd");
+  .IsDependentOn("Sonar-End");
 
 Task("Publish")
   .IsDependentOn("Create-NuGet-Packages")
