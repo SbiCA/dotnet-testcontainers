@@ -98,6 +98,14 @@ namespace DotNet.Testcontainers.Core.Builder
     /// <returns>A configured instance of <see cref="ITestcontainersBuilder{T}"/>.</returns>
     ITestcontainersBuilder<T> WithPortBinding(int hostPort, int containerPort);
 
+
+    /// <summary>
+    /// Binds the port of the Testcontainer to a random host port.
+    /// </summary>
+    /// <param name="containerPort">Port of the TestContainre</param>
+    /// <returns>A configured instance of <see cref="ITestcontainersBuilder{T}"/>.</returns>
+    ITestcontainersBuilder<T> WithRandomPortBinding(int containerPort);
+
     /// <summary>
     /// Binds the port of the Testcontainer to the same port of the host machine.
     /// </summary>
@@ -148,5 +156,12 @@ namespace DotNet.Testcontainers.Core.Builder
     /// </summary>
     /// <returns>A configured instance of <see cref="IDockerContainer"/>.</returns>
     T Build();
+
+    /// <summary>
+    /// Binds the port of the Testcontainer to a random host port.
+    /// </summary>
+    /// <param name="containerPort">Port of the Testcontainer</param>
+    /// <returns>A configured instance of <see cref="ITestcontainersBuilder{T}"/>.</returns>
+    ITestcontainersBuilder<T> WithRandomPortBinding(string containerPort);
   }
 }

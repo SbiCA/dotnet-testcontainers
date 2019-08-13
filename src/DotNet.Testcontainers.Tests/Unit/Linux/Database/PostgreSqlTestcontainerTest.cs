@@ -14,12 +14,35 @@ namespace DotNet.Testcontainers.Tests.Unit.Linux.Database
     {
       // Given
       var testcontainersBuilder = new TestcontainersBuilder<PostgreSqlTestcontainer>()
-        .WithDatabase(new PostgreSqlTestcontainerConfiguration
+        .WithDatabase(new PostgreSqlTestcontainerConfiguration {Database = "db", Username = "postgres", Password = "postgres"});
+
+      // When
+      // Then
+      using (var testcontainer = testcontainersBuilder.Build())
+      {
+        await testcontainer.StartAsync();
+
+        using (var connection = new NpgsqlConnection(testcontainer.ConnectionString))
         {
-          Database = "db",
-          Username = "postgres",
-          Password = "postgres",
-        });
+          connection.Open();
+
+          using (var cmd = new NpgsqlCommand())
+          {
+            cmd.Connection = connection;
+            cmd.CommandText = "SELECT 1";
+            cmd.ExecuteReader();
+          }
+        }
+      }
+    }
+
+    [Fact]
+    public async Task GivenPostgres_WhenCall_ThenItWasExposedWithRandomPort()
+    {
+      // Given
+      var testcontainersBuilder = new TestcontainersBuilder<PostgreSqlTestcontainer>()
+        .WithDatabase(new PostgreSqlTestcontainerConfiguration {Database = "db", Username = "postgres", Password = "postgres"})
+        .WithRandomPortBinding(5432);
 
       // When
       // Then

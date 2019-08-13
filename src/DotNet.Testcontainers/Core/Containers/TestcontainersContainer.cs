@@ -107,6 +107,7 @@ namespace DotNet.Testcontainers.Core.Containers
       await this.Create();
 
       await this.Start();
+      // TODO get exposed ports and map to default ports for dbs
 
       this.container = await MetaDataClientContainers.Instance.ByIdAsync(this.Id);
     }

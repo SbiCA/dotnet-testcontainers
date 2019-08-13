@@ -1,33 +1,75 @@
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Docker.DotNet.Models;
+using DotNet.Testcontainers.Core.Models;
+
 namespace DotNet.Testcontainers.Core.Mapper
 {
-  using System.Collections.Generic;
-  using System.IO;
-  using System.Linq;
-  using Docker.DotNet.Models;
-  using DotNet.Testcontainers.Core.Models;
-
   internal class TestcontainersConfigurationConverter
   {
+    public IList<string> Entrypoint
+    {
+      get
+      {
+        return new ToList().Convert(this.Config.Container.Entrypoint);
+      }
+    }
+
+    public IList<string> Command
+    {
+      get
+      {
+        return new ToList().Convert(this.Config.Container.Command);
+      }
+    }
+
+    public IList<string> Environments
+    {
+      get
+      {
+        return new ToMappedList().Convert(this.Config.Container.Environments);
+      }
+    }
+
+    public IDictionary<string, string> Labels
+    {
+      get
+      {
+        return new ToDictionary().Convert(this.Config.Container.Labels);
+      }
+    }
+
+    public IDictionary<string, EmptyStruct> ExposedPorts
+    {
+      get
+      {
+        return new ToExposedPorts().Convert(this.Config.Container.ExposedPorts);
+      }
+    }
+
+    public IDictionary<string, IList<PortBinding>> PortBindings
+    {
+      get
+      {
+        return new ToPortBindings().Convert(this.Config.Host.PortBindings);
+      }
+    }
+
+    public IList<Mount> Mounts
+    {
+      get
+      {
+        return new ToMounts().Convert(this.Config.Host.Mounts);
+      }
+    }
+
+    private TestcontainersConfiguration Config { get; }
+
     public TestcontainersConfigurationConverter(TestcontainersConfiguration config)
     {
       this.Config = config;
     }
-
-    public IList<string> Entrypoint => new ToList().Convert(this.Config.Container.Entrypoint);
-
-    public IList<string> Command => new ToList().Convert(this.Config.Container.Command);
-
-    public IList<string> Environments => new ToMappedList().Convert(this.Config.Container.Environments);
-
-    public IDictionary<string, string> Labels => new ToDictionary().Convert(this.Config.Container.Labels);
-
-    public IDictionary<string, EmptyStruct> ExposedPorts => new ToExposedPorts().Convert(this.Config.Container.ExposedPorts);
-
-    public IDictionary<string, IList<PortBinding>> PortBindings => new ToPortBindings().Convert(this.Config.Host.PortBindings);
-
-    public IList<Mount> Mounts => new ToMounts().Convert(this.Config.Host.Mounts);
-
-    private TestcontainersConfiguration Config { get; }
 
     private class ToList : CollectionConverter<IList<string>>
     {
@@ -73,7 +115,15 @@ namespace DotNet.Testcontainers.Core.Mapper
 
       public override IDictionary<string, IList<PortBinding>> Convert(IReadOnlyDictionary<string, string> source)
       {
-        return source?.ToDictionary(binding => $"{binding.Value}/tcp", binding => new List<PortBinding> { new PortBinding { HostPort = binding.Key } } as IList<PortBinding>);
+        return source?.ToDictionary(binding => $"{binding.Key}/tcp", binding =>
+        {
+          // TODO shouldn't this be the value?
+          var portBinding = string.IsNullOrWhiteSpace(binding.Value)
+            ? new PortBinding()
+            : new PortBinding {HostPort = binding.Key};
+
+          return new List<PortBinding> {portBinding} as IList<PortBinding>;
+        });
       }
     }
 
@@ -85,7 +135,7 @@ namespace DotNet.Testcontainers.Core.Mapper
 
       public override IList<Mount> Convert(IReadOnlyDictionary<string, string> source)
       {
-        return source?.Select(mount => new Mount { Source = Path.GetFullPath(mount.Key), Target = mount.Value, Type = "bind" }).ToList();
+        return source?.Select(mount => new Mount {Source = Path.GetFullPath(mount.Key), Target = mount.Value, Type = "bind"}).ToList();
       }
     }
   }
